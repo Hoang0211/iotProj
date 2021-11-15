@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Socket.IO chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            box-sizing: border-box;
+            overflow: auto;
+        }
+
+        #container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            background-color: white;
+        }
+
+        #title {
+            margin: 30px 0px;
+        }
+
+        form {
+            margin: 10px 0px;
+        }
+
+        #input-passcode {
+            width: 300px;
+            height: 30px;
+            padding: 0px 10px;
+        }
+
+        button {
+            width: 50px;
+            height: 30px
+        }
+
+        .log-panel {
+            margin-top: 5px;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            border-radius: 5px;
+            border: 2px solid black;
+            font-size: 20px;
+        }
+
+        .log-msg {
+            margin-right: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <h1 id="title">Passcode Project 1</h1>
+        <form id="change-passcode">
+            <input id="input-passcode" type="text" placeholder="Type your new passcode here...">
+            <button id="submit-btn" type="submit">Submit</button>
+            <button id="delete-btn" type="submit">Delete</button>
+        </form>
+        <div id="log-container"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        if (socket !== undefined) {
+            console.log("Socket connected...")
+
+            const logContainer = document.getElementById("log-container");
+            const newPass = document.getElementById("input-passcode");
+            const changePassBtn = document.getElementById("submit-btn");
+            const deleteBtn = document.getElementById("delete-btn");
+
+            // Render log
+            socket.on("messages", function (logs) {
+                var child = logContainer.lastElementChild;
+                while (child) {
+                    logContainer.removeChild(child);
+                    child = logContainer.lastElementChild;
+                }
+
+                logs.forEach(log => {
+                    const logPanel = document.createElement("div");
+                    const logMsg = document.createElement("div");
+                    const logTime = document.createElement("div");
+
+                    logPanel.classList.add("log-panel");
+                    logMsg.classList.add("log-msg");
+                    logTime.classList.add("log-time");
+
+                    logMsg.innerText = "Message: " + log.message;
+                    logTime.innerText = "Time: " + log.time;
+
+                    logPanel.appendChild(logMsg);
+                    logPanel.appendChild(logTime);
+                    logContainer.appendChild(logPanel);
+                });
+            });
+
+            // Handle submit new passcode
+            changePassBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+
+                // Handle validation
+                let inputArr = newPass.value.split("");
+                if (inputArr.length !== 4) {
+                    return alert("Invalid passcode length!");
+                }
+                let newPassCode = [];
+                for (let i = 0; i < 4; i++) {
+                    let parsedValue = parseInt(inputArr[i]);
+                    if (parsedValue !== parsedValue) {
+                        return alert("Only digit allowed!");
+                    }
+                    newPassCode[i] = parsedValue;
+                };
+
+                socket.emit("pass", newPassCode.join("-"));
+                newPass.value = "";
+            });
+
+            // Handle delete log
+            deleteBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                socket.emit("delete");
+            })
+        };
+    </script>
+</body>
+
+</html>
