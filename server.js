@@ -19,16 +19,20 @@ app.get("/", (req, res) => {
 });
 
 // Connect to broker
-var options = {
-    host: '02782ce026b7481fb23154eb79c7feff.s2.eu.hivemq.cloud',
-    port: 8883,
-    protocol: 'mqtts',
-    username: 'bhong001',
-    password: ''
-}
+const host = '172.20.49.35'
+const port = '1883'
+const clientId = `WebServerClient`
 
-//initialize the MQTT client
-var mqttClient = mqtt.connect(options);
+const connectUrl = `mqtt://${host}:${port}`
+
+const mqttClient = mqtt.connect(connectUrl, {
+  clientId,
+  clean: true,
+  connectTimeout: 4000,
+  username: 'hoang',
+  password: 'hoang',
+  reconnectPeriod: 1000,
+});
 
 //setup the callbacks
 mqttClient.on('connect', function () {
@@ -63,7 +67,7 @@ io.on("connection", (socket) => {
     // Subscribe for new messages
     mqttClient.on("message", function (topic, message) {
         if (topic === "newMsg") {
-            messages.insertOne({ message: message.toString(), time: new Date().toLocaleString()});
+            messages.insertOne({ message: JSON.parse(message.toString()).data.attempt , time: JSON.parse(message.toString()).data.time});
         }
         messages.find().limit(20).sort({ _id: 1 }).toArray(function (err, res) {
             if (err) {
